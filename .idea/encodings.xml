@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/connector/Constants.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/connector/Request.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/net/DefaultServerSocketFactory.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/net/ServerSocketFactory.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/CookieTools.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/DateTool.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/Enumerator.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/ParameterMap.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/RequestUtil.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/huihui/util/StringManager.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/webtest" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/webtest/src/main/java/ModernServlet.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/webtest/src/main/java/PrimitiveServlet.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/webtest/src/main/java/TestGet.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/webtest/src/main/java/TestPost.java" charset="GBK" />
+    <file url="PROJECT" charset="UTF-8" />
+  </component>
+</project>
