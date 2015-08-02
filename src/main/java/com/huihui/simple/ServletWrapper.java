@@ -81,8 +81,8 @@ public class ServletWrapper implements Wrapper {
     @Override
     public Pipeline getPipeline() {
         if (pipeline == null) {
-            pipeline = new SimplePipeline();
-            pipeline.setBasic(new SimpleWrapperValve(this));
+            pipeline = new StandardPipeline();
+            pipeline.setBasic(new StandardWrapperValve(this));
         }
         return pipeline;
     }

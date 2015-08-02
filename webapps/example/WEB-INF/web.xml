@@ -33,5 +33,13 @@
         <servlet-name>TestGet</servlet-name>
         <url-pattern>/testGet</url-pattern>
     </servlet-mapping>
-
+    <servlet>
+        <servlet-name>Session</servlet-name>
+        <servlet-class>com.huihui.servlet.SessionServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Session</servlet-name>
+        <url-pattern>/session</url-pattern>
+    </servlet-mapping>
 </web-app>

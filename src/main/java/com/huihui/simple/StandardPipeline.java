@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Created by hadoop on 2015/7/25 0025.
  */
-public class SimplePipeline implements Pipeline {
+public class StandardPipeline implements Pipeline {
     private Valve  basic;
     private List<Valve> valves = new LinkedList<>();
 

@@ -11,11 +11,11 @@ import java.io.IOException;
 /**
  * Created by hadoop on 2015/7/25 0025.
  */
-public class SimpleWrapperValve implements Valve,Contained {
+public class StandardWrapperValve implements Valve,Contained {
     private Container container;
     private String info;
 
-    public SimpleWrapperValve(Container container) {
+    public StandardWrapperValve(Container container) {
         this.container = container;
     }
 

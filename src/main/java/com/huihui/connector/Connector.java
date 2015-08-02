@@ -27,8 +27,8 @@ public class Connector implements Runnable, Lifecycle {
 
     private Queue<HttpProcessor> processorPool = new LinkedList<>();
 
-    private int minProcessors = 5;
-    private int maxProcessors = 10;
+    private int minProcessors = 15;
+    private int maxProcessors = 25;
     private int curProcessors;
 
 

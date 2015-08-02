@@ -62,11 +62,15 @@
  */
 
 
-package com.huihui.core;
+package com.huihui.core.context;
 
 
+import com.huihui.core.Container;
+import com.huihui.core.Wrapper;
 import com.huihui.core.io.ContextDirFile;
+import com.huihui.core.session.Manager;
 
+import javax.servlet.ServletContext;
 import java.util.Map;
 
 /**
@@ -92,7 +96,6 @@ import java.util.Map;
 public interface Context extends Container {
 
 
-
     /**
      * Add a new servlet mapping, replacing any existing mapping for
      * the specified pattern.
@@ -116,12 +119,18 @@ public interface Context extends Container {
      */
     Map<String, Wrapper> findServletMappings();
 
-     ContextDirFile getDirFile();
+    ContextDirFile getDirFile();
 
-     void setDirFile(ContextDirFile dirFile);
+    void setDirFile(ContextDirFile dirFile);
+
+    Manager getManager();
 
 
+    String getPath();
 
+    void setPath(String path);
 
+    boolean getCookies();
 
+    ServletContext getApplicationContext();
 }

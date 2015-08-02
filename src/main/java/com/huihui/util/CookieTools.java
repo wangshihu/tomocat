@@ -91,7 +91,6 @@ public class CookieTools {
     }
 
     /** Return the header value used to set this cookie
-     *  @deprecated Use StringBuffer version
      */
     public static String getCookieHeaderValue(Cookie cookie) {
         StringBuffer buf = new StringBuffer();

@@ -3,6 +3,8 @@ package com.huihui.simple;
 import com.huihui.connector.HttpRequest;
 import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
+import com.huihui.core.context.Context;
+import com.huihui.core.context.StandardContext;
 import com.huihui.core.io.ContextDirFile;
 import com.huihui.valves.StandardHostValve;
 
@@ -110,7 +112,7 @@ public class StandardHost implements Host {
     }
 
     private void init() {
-        pipeline = new SimplePipeline();
+        pipeline = new StandardPipeline();
         pipeline.setBasic(new StandardHostValve(this));
 
         loader = new HostLoader();
@@ -143,8 +145,9 @@ public class StandardHost implements Host {
         Context context = new StandardContext(this);
         ContextDirFile dirFile = new ContextDirFile(contextFile);
         context.setDirFile(dirFile);
-        String uri = "/" + contextFile.getName();
-        contextRegistry.put(uri, context);
+        String path = "/" + contextFile.getName();
+        contextRegistry.put(path, context);
+        context.setPath(path);
         children.add(context);
     }
 

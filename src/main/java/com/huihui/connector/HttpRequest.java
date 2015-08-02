@@ -65,11 +65,11 @@
 package com.huihui.connector;
 
 
-import com.huihui.core.Context;
+import com.huihui.core.context.Context;
 import com.huihui.core.Host;
+import com.huihui.core.session.Manager;
+import com.huihui.core.session.Session;
 import com.huihui.util.Enumerator;
-import com.huihui.util.RequestUtil;
-import com.huihui.util.URIUtil;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -81,10 +81,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URI;
 import java.security.Principal;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -103,19 +100,26 @@ public class HttpRequest implements HttpServletRequest{
     private HttpResponse responseWrapper;
     private Socket socket;
     private InputStream stream;
-    private Context context;
+
 
     private URI uri;
     private String method;
     private String protocol;
     private Map<String,String[]> parameterMap = new ConcurrentHashMap<>();
-    private boolean parsed;
+    private Map<String,Object> attributes = new ConcurrentHashMap<>();
     private Map<String,String> headers= new ConcurrentHashMap<>();
-    private String postContentType ;
+    private RequestParse requestParse;
     private String queryString;
     private String contentType;
     private int contentLength;
-    private Map<String,Object> attributes = new ConcurrentHashMap<>();
+
+    private String requestedSessionId;
+    private Session session;
+    private Context context;
+    private String contextPath;
+    private String servletPath;
+    private List<Cookie> cookies = new ArrayList<>();
+
 
     public HttpRequest(Connector connector) {
         this.connector = connector;
@@ -214,10 +218,7 @@ public class HttpRequest implements HttpServletRequest{
         this.context = context;
     }
 
-    public void setContext(String contextPattern) {
-        Host host = (Host) connector.getContainer();
-        this.context = host.getContext(contextPattern);
-    }
+
 
 
     /**
@@ -232,72 +233,12 @@ public class HttpRequest implements HttpServletRequest{
 
 
     public void init(){
-        // Read a set of characters from the socket
-        StringBuffer request = new StringBuffer(2048);
-        byte[] buffer = new byte[2048];
-        int i=-1;
-        try {
-            i = stream.read(buffer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (int j=0; j<i; j++) {
-            request.append((char) buffer[j]);
-        }
-        parse(request.toString());
+        if(requestParse==null)
+            requestParse = new RequestParse(this);
+        requestParse.parsing();
     }
 
-    /**
-     * 解析头信息，和内容体
-     * @param request
-     */
-    public void parse(String request) {
-        String[] headerArr = request.split("\r\n");
-        parseFirstLine(headerArr[0]);
-        for(int i=1;i<headerArr.length;i++){
-            if(!headerArr[i].equals("")){
-                parseHeader(headerArr[i]);
-            }else{//Post parameter储存。
-                postContentType = headerArr[i+1];
-                break;
-            }
-        }
-        //uri处理parameter字符串。
-        String url = uri.toString();
-        int parameterIndex = uri.toString().indexOf("?");
-        if(parameterIndex!=-1){
-            uri = URIUtil.getUri(url.substring(0, parameterIndex));
-            queryString = url.substring(parameterIndex+1);
-        }
 
-    }
-    private void parseFirstLine(String str){
-        String[] arr = str.split(" ");
-        method = arr[0];//初始化method
-        dealUri(arr[1]);
-        protocol = arr[2];
-    }
-
-    private void dealUri(String url){
-        int position = url.indexOf("/", 1);
-        String contextPattern = url.substring(0, position);
-        setContext(contextPattern);
-        url = url.substring(position);
-        uri = URIUtil.getUri(url);
-    }
-
-    public void parseHeader(String headerStr){
-        int index=  headerStr.indexOf(":");
-        String name = headerStr.substring(0, index);
-        String value = headerStr.substring(index + 1).trim();
-        headers.put(name, value);
-        if(name.toLowerCase().equals("contentType")){
-            contentType = value;
-        }else if(name.toLowerCase().equals("Content-Length")){
-            contentLength = Integer.valueOf(value);
-        }
-
-    }
     //--------------------------------未实现的
     @Override
     public String getCharacterEncoding() {
@@ -315,16 +256,53 @@ public class HttpRequest implements HttpServletRequest{
     }
     @Override
     public String getRequestedSessionId() {
-        return null;
+        return requestedSessionId;
     }
+
+    public void setRequestedSessionId(String requestedSessionId) {
+        this.requestedSessionId = requestedSessionId;
+    }
+
     @Override
-    public HttpSession getSession(boolean create) {
+    public HttpSession getSession(boolean create){
+        return doGetSession(create);
+    }
+
+    private HttpSession doGetSession(boolean create) {
+        if(session!=null){
+            if(session.isValid())
+                return session.getSession();
+            else
+                session = null;
+        }
+        // Return the requested session if it exists and is valid
+        Manager manager = null;
+        if (context != null)
+            manager = context.getManager();
+
+        if (manager == null)
+            return null;      // Sessions are not supported
+        if (requestedSessionId != null) {
+            session = manager.findSession(requestedSessionId);
+            if(session!=null){
+                if(session.isValid())
+                    return session.getSession();
+                else
+                    session = null;
+            }
+        }
+        // Create a new session if requested and the response is not committed
+        if (!create)
+            return (null);
+        session = manager.createSession();
+        if (session != null)
+            return session.getSession();
         return null;
     }
 
     @Override
     public HttpSession getSession() {
-        return null;
+        return getSession(true);
     }
 
     @Override
@@ -333,8 +311,15 @@ public class HttpRequest implements HttpServletRequest{
     }
     @Override
     public Cookie[] getCookies() {
-        return new Cookie[0];
+        synchronized (cookies){
+            return cookies.toArray(new Cookie[0]);
+        }
     }
+
+    public void addCookie(Cookie cookie) {
+        this.cookies.add(cookie);
+    }
+
     //----------------------------------headers,attributes,and parameters
 
     @Override
@@ -351,6 +336,10 @@ public class HttpRequest implements HttpServletRequest{
     public Enumeration<String> getHeaderNames() {
 
         return new Enumerator(headers.keySet());
+    }
+
+    public Map<String,String> getHeaderMap(){
+        return headers;
     }
 
     @Override
@@ -374,42 +363,32 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getParameter(String name) {
-        if(!parsed)
-            parseParmeter();
+        if(!requestParse.isParsed())
+            requestParse.parseParmeter();
+        String[] values = parameterMap.get(name);
+        if(values==null)
+            return null;
         return parameterMap.get(name)[0];
     }
 
-    private void parseParmeter() {
-        String encoding = getCharacterEncoding();
-        if (encoding == null)
-            encoding = "ISO-8859-1";
-        try {
-            RequestUtil.parseParameters(parameterMap, postContentType, encoding);
-            RequestUtil.parseParameters(parameterMap,queryString,encoding);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        parsed=true;
-    }
+
 
     @Override
     public Enumeration<String> getParameterNames() {
-        if(!parsed)
-            parseParmeter();
+        if(!requestParse.isParsed())
+            requestParse.parseParmeter();
         return new Enumerator(parameterMap.keySet());
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        if(!parsed)
-            parseParmeter();
+        if(!requestParse.isParsed())
+            requestParse.parseParmeter();
         return parameterMap.get(name);
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        if(!parsed)
-            parseParmeter();
         return parameterMap;
     }
 
@@ -418,7 +397,9 @@ public class HttpRequest implements HttpServletRequest{
         return queryString;
     }
 
-
+    public void setQueryString(String queryString){
+        this.queryString = queryString;
+    }
 
     //---------------------------------------------------------------------------一些属性Get
     @Override
@@ -428,6 +409,9 @@ public class HttpRequest implements HttpServletRequest{
     @Override
     public int getContentLength() {
         return contentLength;
+    }
+    public void setContentLength(int contentLength){
+        this.contentLength = contentLength;
     }
 
     @Override
@@ -439,20 +423,30 @@ public class HttpRequest implements HttpServletRequest{
     public String getContentType() {
         return contentType;
     }
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
     @Override
     public String getProtocol() {
         return protocol;
     }
-
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
     @Override
     public String getMethod() {
         return method;
+    }
+    public void setMethod(String method) {
+        this.method = method;
     }
     @Override
     public String getRequestURI() {
         return uri.toString();
     }
-
+    public void setRequestURI(URI uri) {
+        this.uri = uri;
+    }
     @Override
     public StringBuffer getRequestURL() {
         StringBuffer result = null;
@@ -507,6 +501,29 @@ public class HttpRequest implements HttpServletRequest{
         return socket.getInetAddress().toString();
     }
 
+    @Override
+    public String getContextPath() {
+        return this.contextPath;
+    }
+
+    @Override
+    public String getServletPath() {
+        return this.servletPath;
+    }
+
+    public void setServletPath(String servletPath) {
+        this.servletPath = servletPath;
+    }
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+        if(context==null){
+            Host host  = (Host) connector.getContainer();
+            context = host.getContext(contextPath);
+        }
+
+    }
+
     //-----------------------------------------------------------------------------下面基本没用
     @Override
     public String getAuthType() {
@@ -538,10 +555,7 @@ public class HttpRequest implements HttpServletRequest{
         return null;
     }
 
-    @Override
-    public String getContextPath() {
-        return null;
-    }
+
 
 
 
@@ -561,12 +575,6 @@ public class HttpRequest implements HttpServletRequest{
     }
 
 
-
-
-    @Override
-    public String getServletPath() {
-        return null;
-    }
 
 
 
@@ -687,14 +695,6 @@ public class HttpRequest implements HttpServletRequest{
     public DispatcherType getDispatcherType() {
         return null;
     }
-
-
-
-
-
-
-
-
 
 
 

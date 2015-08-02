@@ -1,16 +1,20 @@
-package com.huihui.simple;
+package com.huihui.core.context;
 
 import com.huihui.connector.HttpRequest;
 import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 import com.huihui.core.io.ContextDirFile;
 import com.huihui.core.loader.WebappLoader;
+import com.huihui.core.session.Manager;
+import com.huihui.core.session.StandardManager;
 import com.huihui.exceptions.LifecycleException;
+import com.huihui.simple.StandardPipeline;
 import com.huihui.util.LifeCycleSupport;
 import com.huihui.valves.StandardContextValve;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,16 +31,18 @@ public class StandardContext implements Context {
     private Pipeline pipeline;
     private Container parent;
     private Loader loader;
-    private String info;
     final Logger logger = LoggerFactory.getLogger(StandardContext.class);
     private String name;
     private Map<String, Wrapper> servletMapping = new ConcurrentHashMap<>();
     private List<Container> children = Collections.synchronizedList(new ArrayList());
     private boolean started = false;
+    private String path;
 
     private final LifeCycleSupport lifeCycleSupport = new LifeCycleSupport(this);
 
-    ContextDirFile dirFile;
+    private ContextDirFile dirFile;
+    private Manager manager;
+    private ServletContext applicationContext;
 
     public StandardContext(Container parent) {
         this.parent = parent;
@@ -70,6 +76,33 @@ public class StandardContext implements Context {
 
     public void setDirFile(ContextDirFile dirFile) {
         this.dirFile = dirFile;
+    }
+
+    @Override
+    public Manager getManager() {
+        if(manager==null)
+            manager=new StandardManager();
+        return manager;
+    }
+
+    @Override
+    public String getPath() {
+        return this.path;
+    }
+
+    @Override
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public boolean getCookies() {//TODO 禁止cookies
+        return true;
+    }
+
+    @Override
+    public ServletContext getApplicationContext() {
+        return this.applicationContext;
     }
 
     @Override
@@ -123,7 +156,7 @@ public class StandardContext implements Context {
     @Override
     public Pipeline getPipeline() {
         if (pipeline == null) {
-            pipeline = new SimplePipeline();
+            pipeline = new StandardPipeline();
             pipeline.setBasic(new StandardContextValve(this));
         }
         return pipeline;
@@ -161,11 +194,7 @@ public class StandardContext implements Context {
 
     @Override
     public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
+        return "StandardContext";
     }
 
 
@@ -195,6 +224,7 @@ public class StandardContext implements Context {
             throw new LifecycleException("context is started");
         lifeCycleSupport.fireLifecycleEvent(LifeStatus.BEFORE_START_EVENT, null);
         this.name = dirFile.getSource().getName();
+        this.applicationContext = new ApplicationContext(this);
         //子组件启动。
         getPipeline().start();
         this.loader =  new WebappLoader(this);

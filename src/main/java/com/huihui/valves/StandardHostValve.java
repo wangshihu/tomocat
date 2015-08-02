@@ -3,6 +3,7 @@ package com.huihui.valves;
 import com.huihui.connector.HttpRequest;
 import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
+import com.huihui.core.context.Context;
 
 import javax.servlet.ServletException;
 import java.io.IOException;

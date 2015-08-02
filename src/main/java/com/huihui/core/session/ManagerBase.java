@@ -7,7 +7,7 @@ import java.util.Random;
 /**
  * Created by hadoop on 2015/8/1 0001.
  */
-public abstract class ManagerBase implements Mananager {
+public abstract class ManagerBase implements Manager {
     private Random random;
 
     /**
@@ -150,4 +150,7 @@ public abstract class ManagerBase implements Mananager {
         this.entropy = entropy;
 
     }
+
+
+
 }

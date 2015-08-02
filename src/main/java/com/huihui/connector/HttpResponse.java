@@ -1,16 +1,19 @@
 package com.huihui.connector;
 
 
+import com.huihui.core.context.Context;
+import com.huihui.util.CookieTools;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Collection;
-import java.util.Locale;
+import java.util.*;
 
 
 /**
@@ -37,8 +40,11 @@ public class HttpResponse implements HttpServletResponse {
     private boolean committed;
     private int  status =200;
     private String message = "ok";
-    private int contentLength = 0;
+    private int contentLength = -1;
     private String contentType;
+
+    private List<Cookie> cookies = new ArrayList<>();
+    private Context context;
 
 
     public Socket getSocket() {
@@ -63,15 +69,7 @@ public class HttpResponse implements HttpServletResponse {
      */
     public void finishResponse() throws IOException{
 
-
-
-
-       //PrintWriter pw2 = new PrintWriter(outputStream);
-//        writer=null;
-//        PrintWriter out = new PrintWriter(outputStream);
-//        out.println(body);
         sendHeaders();
-//        out.flush();
         // Flush and close the appropriate output mechanism
 
         writer.flush();
@@ -103,9 +101,37 @@ public class HttpResponse implements HttpServletResponse {
 //                    "\r\n");
 //        }
 
-            outputWriter.print("Set-Cookie:JSESSIONID=9BD58B1FEED62D5D716AB43B14493F09;Path=/example"+"\r\n");
 
+        // Add the session ID cookie if necessary
+        HttpSession session = request.getRequest().getSession(false);
 
+        if ((session != null) && session.isNew() && (getContext() != null)
+                && getContext().getCookies()) {
+            Cookie cookie = new Cookie(Globals.COOKIE_SESSION,
+                    session.getId());
+
+            cookie.setMaxAge(-1);
+            String contextPath = null;
+            if (context != null)
+                contextPath = context.getPath();
+            if ((contextPath != null) && (contextPath.length() > 0))
+                cookie.setPath(contextPath);
+            else
+                cookie.setPath("/");
+            addCookie(cookie);
+        }
+
+        // Send all specified cookies (if any)
+        synchronized (cookies) {
+            Iterator items = cookies.iterator();
+            while (items.hasNext()) {
+                Cookie cookie = (Cookie) items.next();
+                outputWriter.print(CookieTools.getCookieHeaderName(cookie));
+                outputWriter.print(": ");
+                outputWriter.print(CookieTools.getCookieHeaderValue(cookie));
+                outputWriter.print("\r\n");
+            }
+        }
         outputWriter.print("\r\n");
         outputWriter.flush();
     }
@@ -264,7 +290,7 @@ public class HttpResponse implements HttpServletResponse {
 
     @Override
     public void addCookie(Cookie cookie) {
-
+        cookies.add(cookie);
     }
 
     @Override
@@ -459,4 +485,11 @@ public class HttpResponse implements HttpServletResponse {
     public String getProtocol() {
         return request.getProtocol();
     }
+
+    public Context getContext() {
+        if(context==null)
+            context = request.getContext();
+        return context;
+    }
+
 }

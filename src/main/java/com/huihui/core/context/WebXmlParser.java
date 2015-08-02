@@ -1,8 +1,9 @@
-package com.huihui.simple;
+package com.huihui.core.context;
 
-import com.huihui.core.Context;
+import com.huihui.core.context.Context;
 import com.huihui.core.Wrapper;
 import com.huihui.exceptions.ExceptionFactory;
+import com.huihui.simple.ServletWrapper;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
