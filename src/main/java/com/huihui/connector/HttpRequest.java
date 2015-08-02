@@ -1,5 +1,72 @@
+/*
+ * $Header: /home/cvs/jakarta-tomcat-4.0/catalina/src/share/org/apache/catalina/Request.java,v 1.5 2001/08/01 03:04:04 craigmcc Exp $
+ * $Revision: 1.5 $
+ * $Date: 2001/08/01 03:04:04 $
+ *
+ * ====================================================================
+ *
+ * The Apache Software License, Version 1.1
+ *
+ * Copyright (c) 1999 The Apache Software Foundation.  All rights
+ * reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *
+ * 3. The end-user documentation included with the redistribution, if
+ *    any, must include the following acknowlegement:
+ *       "This product includes software developed by the
+ *        Apache Software Foundation (http://www.apache.org/)."
+ *    Alternately, this acknowlegement may appear in the software itself,
+ *    if and wherever such third-party acknowlegements normally appear.
+ *
+ * 4. The names "The Jakarta Project", "Tomcat", and "Apache Software
+ *    Foundation" must not be used to endorse or promote products derived
+ *    from this software without prior written permission. For written
+ *    permission, please contact apache@apache.org.
+ *
+ * 5. Products derived from this software may not be called "Apache"
+ *    nor may "Apache" appear in their names without prior written
+ *    permission of the Apache Group.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * ====================================================================
+ *
+ * This software consists of voluntary contributions made by many
+ * individuals on behalf of the Apache Software Foundation.  For more
+ * information on the Apache Software Foundation, please see
+ * <http://www.apache.org/>.
+ *
+ * [Additional notices, if required by prior licensing conditions]
+ *
+ */
+
+
 package com.huihui.connector;
 
+
+import com.huihui.core.Context;
+import com.huihui.core.Host;
 import com.huihui.util.Enumerator;
 import com.huihui.util.RequestUtil;
 import com.huihui.util.URIUtil;
@@ -11,6 +78,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Collection;
@@ -19,11 +87,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 /**
- * Created by hadoop on 2015/7/21 0021.
+ * A <b>Request</b> is the Catalina-internal facade for a
+ * <code>ServletRequest</code> that is to be processed, in order to
+ * produce the corresponding <code>Response</code>.
+ *
+ * @author Craig R. McClanahan
+ * @version $Revision: 1.5 $ $Date: 2001/08/01 03:04:04 $
  */
-public class Request implements HttpServletRequest {
+
+public class HttpRequest implements HttpServletRequest{
+    private Connector connector;
+    private HttpServletRequestFacade facade;
+    private HttpResponse responseWrapper;
+    private Socket socket;
     private InputStream stream;
+    private Context context;
+
     private URI uri;
     private String method;
     private String protocol;
@@ -34,16 +115,120 @@ public class Request implements HttpServletRequest {
     private String queryString;
     private String contentType;
     private int contentLength;
+    private Map<String,Object> attributes = new ConcurrentHashMap<>();
 
-    private RequestWrapper wrapper;
+    public HttpRequest(Connector connector) {
+        this.connector = connector;
+    }
 
-    public Request(RequestWrapper wrapper) {
-        this.wrapper = wrapper;
-        stream = wrapper.getStream();
+
+    // --------------------------------------------------------- Public Methods
+
+    public void refresh(Socket socket) throws IOException {
+        this.stream = socket.getInputStream();
+        this.socket = socket;
         init();
     }
 
-    private Map<String,Object> attributes = new ConcurrentHashMap<>();
+    /**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle(){
+
+    }
+
+    /**
+     * Perform whatever actions are required to flush and close the input
+     * stream or reader, in a single operation.
+     *
+     * @exception IOException if an input/output error occurs
+     */
+    public void finishRequest() throws IOException{
+
+    }
+
+    public Connector getConnector() {
+        return connector;
+    }
+
+    public void setConnector(Connector connector) {
+        this.connector = connector;
+    }
+
+    public HttpServletRequest getRequest() {
+        if(facade==null)
+            facade = new HttpServletRequestFacade(this);
+        return facade;
+    }
+
+
+
+    public HttpResponse getResponseWrapper() {
+        return responseWrapper;
+    }
+
+    public void setResponseWrapper(HttpResponse responseWrapper) {
+        this.responseWrapper = responseWrapper;
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
+    }
+
+    public InputStream getStream() {
+        return stream;
+    }
+
+    public void setStream(InputStream stream) {
+        this.stream = stream;
+    }
+
+
+
+
+
+
+    /**
+     * Return the Context within which this Request is being processed.
+     */
+    public Context getContext(){
+        return context;
+    }
+
+
+
+    /**
+     * Set the Context within which this Request is being processed.  This
+     * must be called as soon as the appropriate Context is identified, because
+     * it identifies the value to be returned by <code>getContextPath()</code>,
+     * and thus enables parsing of the request URI.
+     *
+     * @param context The newly associated Context
+     */
+    public void setContext(Context context){
+        this.context = context;
+    }
+
+    public void setContext(String contextPattern) {
+        Host host = (Host) connector.getContainer();
+        this.context = host.getContext(contextPattern);
+    }
+
+
+    /**
+     * Return descriptive information about this Request implementation and
+     * the corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
+     */
+    public String getInfo(){
+        return HttpRequest.class.getName();
+    }
+
 
 
     public void init(){
@@ -67,7 +252,7 @@ public class Request implements HttpServletRequest {
      * @param request
      */
     public void parse(String request) {
-       String[] headerArr = request.split("\r\n");
+        String[] headerArr = request.split("\r\n");
         parseFirstLine(headerArr[0]);
         for(int i=1;i<headerArr.length;i++){
             if(!headerArr[i].equals("")){
@@ -96,7 +281,7 @@ public class Request implements HttpServletRequest {
     private void dealUri(String url){
         int position = url.indexOf("/", 1);
         String contextPattern = url.substring(0, position);
-        wrapper.setContext(contextPattern);
+        setContext(contextPattern);
         url = url.substring(position);
         uri = URIUtil.getUri(url);
     }
@@ -113,7 +298,7 @@ public class Request implements HttpServletRequest {
         }
 
     }
-//--------------------------------未实现的
+    //--------------------------------未实现的
     @Override
     public String getCharacterEncoding() {
         return null;
@@ -164,6 +349,7 @@ public class Request implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getHeaderNames() {
+
         return new Enumerator(headers.keySet());
     }
 
@@ -198,7 +384,7 @@ public class Request implements HttpServletRequest {
         if (encoding == null)
             encoding = "ISO-8859-1";
         try {
-            RequestUtil.parseParameters(parameterMap,postContentType,encoding);
+            RequestUtil.parseParameters(parameterMap, postContentType, encoding);
             RequestUtil.parseParameters(parameterMap,queryString,encoding);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -280,46 +466,45 @@ public class Request implements HttpServletRequest {
     //-----------------------------------------------------------------------------网络项
     @Override
     public String getScheme() {
-        return wrapper.getScheme();
+       return connector.getScheme();
     }
-
 
     @Override
     public int getRemotePort() {
-        return wrapper.getSocket().getPort();
+        return socket.getPort();
     }
 
     @Override
     public String getLocalName() {
-        return wrapper.getSocket().getLocalAddress().toString();
+        return socket.getLocalAddress().toString();
     }
 
     @Override
     public String getLocalAddr() {
-        return wrapper.getSocket().getLocalAddress().toString();
+        return socket.getLocalAddress().toString();
     }
 
     @Override
     public int getLocalPort() {
-        return wrapper.getSocket().getLocalPort();
+        return socket.getLocalPort();
     }
     @Override
     public String getServerName() {
-        return wrapper.getSocket().getLocalAddress().toString();
+        return socket.getLocalAddress().toString();
     }
 
     @Override
     public int getServerPort() {
-        return wrapper.getSocket().getLocalPort();
+        return socket.getLocalPort();
     }
     @Override
     public String getRemoteAddr() {
-        return wrapper.getSocket().getRemoteSocketAddress().toString();
+        return socket.getRemoteSocketAddress().toString();
     }
 
     @Override
     public String getRemoteHost() {
-        return wrapper.getSocket().getInetAddress().toString();
+        return socket.getInetAddress().toString();
     }
 
     //-----------------------------------------------------------------------------下面基本没用
@@ -502,4 +687,15 @@ public class Request implements HttpServletRequest {
     public DispatcherType getDispatcherType() {
         return null;
     }
+
+
+
+
+
+
+
+
+
+
+
 }

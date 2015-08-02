@@ -98,8 +98,8 @@ public class Connector implements Runnable, Lifecycle {
      * Create (or allocate) and return a Request object suitable for
      * specifying the contents of a Request to the responsible Container.
      */
-    public RequestWrapper createRequest() {
-        RequestWrapper request = new RequestWrapper(this);
+    public HttpRequest createRequest() {
+        HttpRequest request = new HttpRequest(this);
         return request;
     }
 
@@ -108,8 +108,8 @@ public class Connector implements Runnable, Lifecycle {
      * Create (or allocate) and return a Response object suitable for
      * receiving the contents of a Response from the responsible Container.
      */
-    public ResponseWrapper createResponse() {
-        ResponseWrapper response = new ResponseWrapper(this);
+    public HttpResponse createResponse() {
+        HttpResponse response = new HttpResponse(this);
         return response;
     }
 

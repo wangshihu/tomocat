@@ -65,8 +65,8 @@
 package com.huihui.core;
 
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -151,7 +151,7 @@ public interface Valve {
      * @exception ServletException if a servlet error occurs, or is thrown
      *  by a subsequently invoked Valve, Filter, or Servlet
      */
-    public void invoke(RequestWrapper request, ResponseWrapper response)
+    public void invoke(HttpRequest request, HttpResponse response)
         throws IOException, ServletException;
 
 

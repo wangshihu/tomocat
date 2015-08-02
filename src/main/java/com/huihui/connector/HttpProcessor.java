@@ -12,8 +12,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class HttpProcessor implements Runnable {
     private final Connector connector;
     private final int id;
-    private final RequestWrapper requestWrapper;
-    private final ResponseWrapper responseWrapper;
+    private final HttpRequest requestWrapper;
+    private final HttpResponse responseWrapper;
     private final String threadName;
     private boolean stoped = false;
     private Socket socket;
@@ -27,7 +27,7 @@ public class HttpProcessor implements Runnable {
         this.requestWrapper = connector.createRequest();
         this.responseWrapper = connector.createResponse();
         this.requestWrapper.setResponseWrapper(responseWrapper);
-        this.responseWrapper.setRequestWrapper(requestWrapper);
+        this.responseWrapper.setRequest(requestWrapper);
         this.threadName =
                 "HttpProcessor[" + connector.getPort() + "][" + id + "]";
     }

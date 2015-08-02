@@ -1,7 +1,7 @@
 package com.huihui.simple;
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 import com.huihui.core.loader.WebappClassLoader;
 
@@ -33,7 +33,7 @@ public class ServletWrapper implements Wrapper {
     }
 
     @Override
-    public void invoke(RequestWrapper request, ResponseWrapper response) throws IOException, ServletException {
+    public void invoke(HttpRequest request, HttpResponse response) throws IOException, ServletException {
         getPipeline().invoke(request, response);
     }
 
@@ -141,7 +141,7 @@ public class ServletWrapper implements Wrapper {
 
 
     @Override
-    public Container map(RequestWrapper request, boolean update) {
+    public Container map(HttpRequest request, boolean update) {
         return null;
     }
 

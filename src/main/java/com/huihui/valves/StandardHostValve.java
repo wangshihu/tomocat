@@ -1,7 +1,7 @@
 package com.huihui.valves;
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 
 import javax.servlet.ServletException;
@@ -34,7 +34,7 @@ public class StandardHostValve implements Valve,Contained {
     }
 
     @Override
-    public void invoke(RequestWrapper requestWrapper, ResponseWrapper responseWrapper) throws IOException, ServletException {
+    public void invoke(HttpRequest requestWrapper, HttpResponse responseWrapper) throws IOException, ServletException {
         Context context = requestWrapper.getContext();
         if(context!=null)
             context.invoke(requestWrapper,responseWrapper);

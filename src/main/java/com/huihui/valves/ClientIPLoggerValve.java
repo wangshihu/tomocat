@@ -1,7 +1,7 @@
 package com.huihui.valves;
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 
 import javax.servlet.ServletException;
@@ -13,7 +13,7 @@ public class ClientIPLoggerValve implements Valve, Contained {
 
   protected Container container;
 
-  public void invoke(RequestWrapper request, ResponseWrapper response)
+  public void invoke(HttpRequest request, HttpResponse response)
     throws IOException, ServletException {
 
 

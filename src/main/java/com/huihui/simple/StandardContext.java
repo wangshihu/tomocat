@@ -1,7 +1,7 @@
 package com.huihui.simple;
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 import com.huihui.core.io.ContextDirFile;
 import com.huihui.core.loader.WebappLoader;
@@ -43,7 +43,7 @@ public class StandardContext implements Context {
     }
 
     @Override
-    public void invoke(RequestWrapper request, ResponseWrapper response) throws IOException, ServletException {
+    public void invoke(HttpRequest request, HttpResponse response) throws IOException, ServletException {
         pipeline.invoke(request, response);
     }
 
@@ -110,7 +110,7 @@ public class StandardContext implements Context {
 
 
     @Override
-    public Container map(RequestWrapper request, boolean update) {
+    public Container map(HttpRequest request, boolean update) {
         return null;
     }
 

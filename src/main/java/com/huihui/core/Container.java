@@ -1,8 +1,8 @@
 package com.huihui.core;
 
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -368,7 +368,7 @@ public interface Container extends Lifecycle {
      * @exception ServletException if a ServletException was thrown
      *  while processing this request
      */
-    public void invoke(RequestWrapper request, ResponseWrapper response)
+    public void invoke(HttpRequest request, HttpResponse response)
         throws IOException, ServletException;
 
 
@@ -380,7 +380,7 @@ public interface Container extends Lifecycle {
      * @param request Request being processed
      * @param update Update the Request to reflect the mapping selection?
      */
-    public Container map(RequestWrapper request, boolean update);
+    public Container map(HttpRequest request, boolean update);
 
 
     /**

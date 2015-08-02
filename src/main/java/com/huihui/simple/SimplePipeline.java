@@ -1,7 +1,7 @@
 package com.huihui.simple;
 
-import com.huihui.connector.RequestWrapper;
-import com.huihui.connector.ResponseWrapper;
+import com.huihui.connector.HttpRequest;
+import com.huihui.connector.HttpResponse;
 import com.huihui.core.*;
 
 import javax.servlet.ServletException;
@@ -17,7 +17,7 @@ public class SimplePipeline implements Pipeline {
     private List<Valve> valves = new LinkedList<>();
 
     @Override
-    public void invoke(RequestWrapper request, ResponseWrapper response) throws IOException, ServletException {
+    public void invoke(HttpRequest request, HttpResponse response) throws IOException, ServletException {
         for(Valve valve:valves){
             valve.invoke(request,response);
         }
